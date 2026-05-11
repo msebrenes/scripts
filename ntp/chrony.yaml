@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: chrony
+  # namespace: if-needed
+spec:
+  selector:
+    matchLabels:
+      name: chrony
+  template:
+    metadata:
+      labels:
+        name: chrony
+    spec:
+      volumes:
+        # This is the host directory for Chrony
+        - name: host-dir
+          hostPath:
+            path: /etc/chrony
+        # This is the custom configuration for Chrony
+        - name: config
+          configMap:
+            name: chrony-config
+      hostPID: true
+      containers:
+        # This container runs every minute to apply any changes in the ConfigMap to the /etc/chrony directory in the host, then it restarts the Chrony daemon.
+        - name: chrony
+          image: mcr.microsoft.com/cbl-mariner/base/core:1.0
+          command: ["bash", "-c", "while true; do cp /tmp/chrony/chrony.conf /chrony && nsenter --target 1 --pid --mount systemctl restart chronyd ; sleep 60 ; done"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            # Host directory
+            - name: host-dir
+              mountPath: /chrony
+            # Chrony configuration
+            - name: config
+              mountPath: /tmp/chrony

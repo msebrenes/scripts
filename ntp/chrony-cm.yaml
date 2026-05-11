@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chrony-config
+data:
+  chrony.conf: |
+    server ntp.ubuntu.com iburst
+    driftfile /var/lib/chrony/drift
+    makestep 10 3
+    rtcsync
